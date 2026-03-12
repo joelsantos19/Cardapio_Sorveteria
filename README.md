@@ -7,6 +7,8 @@ Descrição do cardápio digital moderno e funcional...
 - Seleção de Mesa
 - Cardápio Interativo...
 
+- 
+
 ## 🛠️ Tecnologias Utilizadas
 - Flutter, Dart e Google Fonts.
 
