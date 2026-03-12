@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 import '../models/milkshake_model.dart';
 
 class MilkshakeMenuScreen extends StatefulWidget {
-  const MilkshakeMenuScreen({super.key});
+  final int selectedTable;
+  const MilkshakeMenuScreen({super.key, required this.selectedTable});
 
   @override
   State<MilkshakeMenuScreen> createState() => _MilkshakeMenuScreenState();
@@ -18,7 +20,8 @@ class _MilkshakeMenuScreenState extends State<MilkshakeMenuScreen> {
   final Map<int, int> _cart = {}; // Rastreia as quantidades por índice
   int? _activeOrderNumber;
   String _orderStatus = 'Preparando seu pedido...';
-  double _orderProgress = 0.3;
+  double _orderProgress = 0.0;
+  Timer? _progressTimer;
 
   @override
   void initState() {
@@ -33,6 +36,7 @@ class _MilkshakeMenuScreenState extends State<MilkshakeMenuScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _progressTimer?.cancel();
     super.dispose();
   }
 
@@ -280,14 +284,127 @@ class _MilkshakeMenuScreenState extends State<MilkshakeMenuScreen> {
           setState(() {
             _cart.clear();
             _activeOrderNumber = 1000 + Random().nextInt(9000);
-            _orderStatus = 'Preparando seu pedido...';
-            _orderProgress = 0.3;
+            _orderStatus = 'Preparando...';
+            _orderProgress = 0.0;
           });
+          _startOrderProgress();
         },
       ),
     );
   }
 
+
+  void _startOrderProgress() {
+    _progressTimer?.cancel();
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      setState(() {
+        if (_orderProgress < 1.0) {
+          _orderProgress += 0.01;
+          if (_orderProgress >= 0.8) {
+            _orderStatus = 'Finalizando...';
+          } else if (_orderProgress >= 0.4) {
+            _orderStatus = 'No fogo...';
+          }
+        } else {
+          _orderStatus = 'Pedido Pronto!';
+          timer.cancel();
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              _showRatingModal();
+            }
+          });
+        }
+      });
+    });
+  }
+
+  void _showRatingModal() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        int rating = 0;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.black.withOpacity(0.9),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              title: Column(
+                children: [
+                  const Icon(Icons.star_rounded, color: Colors.amber, size: 50),
+                  const SizedBox(height: 10),
+                  Text(
+                    'AVALIE SUA EXPERIÊNCIA',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'O que achou do seu pedido na Mesa ${widget.selectedTable}?',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 35,
+                        ),
+                        onPressed: () {
+                          setState(() => rating = index + 1);
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actions: [
+                Center(
+                  child: SizedBox(
+                    width: 200,
+                    height: 45,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      onPressed: rating > 0
+                          ? () {
+                              Navigator.pop(context); // Fecha diálogo
+                              Navigator.popUntil(context, (route) => route.isFirst); // Volta para TableSelection
+                            }
+                          : null,
+                      child: Text(
+                        'FINALIZAR',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildTrapezoidHighlight() {
     final bgColor = milkshakes[_currentIndex].gradientColors[1].withOpacity(
@@ -506,7 +623,7 @@ class _MilkshakeMenuScreenState extends State<MilkshakeMenuScreen> {
                       ),
                     ),
                     Text(
-                      'Pedido #$_activeOrderNumber',
+                      'Mesa ${widget.selectedTable} • Pedido #$_activeOrderNumber',
                       style: GoogleFonts.outfit(
                         color: Colors.white60,
                         fontSize: 12,
@@ -545,7 +662,7 @@ class _MilkshakeMenuScreenState extends State<MilkshakeMenuScreen> {
               _buildTrackerButton(
                 icon: Icons.star_outline_rounded,
                 label: 'Avaliação',
-                onTap: () {},
+                onTap: _showRatingModal,
               ),
             ],
           ),

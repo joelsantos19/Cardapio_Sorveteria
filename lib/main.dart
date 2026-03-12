@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/milkshake_menu_screen.dart';
+import 'screens/welcome_screen.dart';
 
 void main() {
   runApp(const SorveteriaApp());
@@ -17,7 +17,7 @@ class SorveteriaApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
         useMaterial3: true,
       ),
-      home: const MilkshakeMenuScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }
