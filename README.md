@@ -1,6 +1,6 @@
 ## 📹 Demonstração
 https://youtube.com/shorts/gniOimtCgDI
-# Sorveteria Jenkins 🍦
+# Sorveteria🍦
 
 Descrição do cardápio digital moderno e funcional...
 
